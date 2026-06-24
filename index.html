@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KeepTrack — Plan & make the most of your day</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f6f7f9;
+    color: #1c2024;
+    line-height: 1.5;
+    padding: 18px;
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { color: #6b7280; font-size: 13px; margin-top: 2px; }
+  .card {
+    background: #fff;
+    border: 1px solid #e6e8eb;
+    border-radius: 14px;
+    padding: 18px;
+    margin-top: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  label { font-size: 12px; font-weight: 600; color: #4b5563; display: block; margin-bottom: 4px; }
+  input, select, textarea {
+    font-family: inherit; font-size: 14px; color: #1c2024;
+    border: 1px solid #d6d9dd; border-radius: 9px; padding: 9px 11px; background: #fff;
+    outline: none; transition: border-color .15s, box-shadow .15s; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+  .field { flex: 1; min-width: 110px; }
+  button {
+    font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; border-radius: 9px; padding: 10px 16px; transition: filter .15s, opacity .15s;
+  }
+  .btn-primary { background: #4f46e5; color: #fff; }
+  .btn-primary:hover { filter: brightness(1.07); }
+  .btn-primary:disabled { opacity: .55; cursor: default; }
+  .btn-ghost { background: #f1f2f4; color: #374151; }
+  .btn-ghost:hover { filter: brightness(.97); }
+  .btn-cal { background: #0b8a3d; color:#fff; }
+  .btn-cal:hover { filter: brightness(1.07); }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .tasklist { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .taskitem {
+    display: flex; align-items: center; gap: 10px; background: #f9fafb;
+    border: 1px solid #eceef0; border-radius: 9px; padding: 9px 12px;
+  }
+  .taskitem .t-text { flex: 1; font-size: 14px; }
+  .taskitem .t-prio {
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: .03em;
+  }
+  .p-high { background: #fee2e2; color: #b91c1c; }
+  .p-med  { background: #fef3c7; color: #b45309; }
+  .p-low  { background: #e0e7ff; color: #4338ca; }
+  .p-fixed{ background: #d1fae5; color: #047857; }
+  .x { cursor: pointer; color: #9ca3af; font-size: 18px; line-height: 1; padding: 2px 4px; }
+  .x:hover { color: #ef4444; }
+  .muted { color: #9ca3af; font-size: 13px; }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin-bottom: 4px; }
+  #planArea { margin-top: 16px; }
+  .summary {
+    background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+    border: 1px solid #e0e7ff; border-radius: 12px; padding: 14px 16px; font-size: 14px; color: #3730a3;
+  }
+  .block {
+    background: #fff; border: 1px solid #e6e8eb; border-radius: 12px; padding: 14px 16px; margin-top: 12px;
+    position: relative; overflow: hidden;
+  }
+  .block::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #4f46e5; }
+  .block.done::before { background: #16a34a; }
+  .block.break::before { background: #f59e0b; }
+  .block.fixed::before { background: #0b8a3d; }
+  .block-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .block-time { font-size: 13px; font-weight: 700; color: #4f46e5; font-variant-numeric: tabular-nums; }
+  .block-title { font-size: 15px; font-weight: 700; flex: 1; }
+  .block-focus { font-size: 12px; color: #6b7280; }
+  .steps { list-style: none; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .step { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; }
+  .step input { width: 17px; height: 17px; margin-top: 2px; flex: 0 0 auto; accent-color: #4f46e5; cursor: pointer; }
+  .step.checked span { text-decoration: line-through; color: #9ca3af; }
+  .tip { margin-top: 10px; font-size: 12.5px; color: #6b7280; background: #f9fafb; border-radius: 8px; padding: 8px 11px; }
+  .tip b { color: #4b5563; }
+  .gcal { display:inline-block; margin-top:8px; font-size:12px; font-weight:600; color:#0b8a3d; text-decoration:none; }
+  .gcal:hover { text-decoration: underline; }
+  .progress-wrap { margin-top: 14px; }
+  .bar { height: 9px; background: #eceef0; border-radius: 20px; overflow: hidden; }
+  .bar > div { height: 100%; background: #16a34a; width: 0%; transition: width .3s; }
+  .spinner {
+    display: inline-block; width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.4);
+    border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 7px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toolbar { display: flex; gap: 8px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+  .err { color: #b91c1c; font-size: 13px; margin-top: 10px; }
+  .cal-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+  .hint2 { font-size:12px; color:#6b7280; margin-top:8px; }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <h1>KeepTrack</h1>
+      <div class="sub" id="dateLine"></div>
+    </div>
+    <div class="row">
+      <button class="btn-ghost btn-sm" id="prevDay">‹ Prev</button>
+      <button class="btn-ghost btn-sm" id="today">Today</button>
+      <button class="btn-ghost btn-sm" id="nextDay">Next ›</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Your day</div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field" style="max-width:120px;">
+        <label>Start</label>
+        <input type="time" id="startTime" value="09:00">
+      </div>
+      <div class="field" style="max-width:120px;">
+        <label>End</label>
+        <input type="time" id="endTime" value="18:00">
+      </div>
+      <div class="field" style="max-width:190px;">
+        <label>Energy peak</label>
+        <select id="energy">
+          <option value="morning">Morning person</option>
+          <option value="afternoon">Afternoon peak</option>
+          <option value="evening">Evening peak</option>
+          <option value="steady">Steady all day</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">What do you need to do today?</div>
+    <div class="row" style="margin-top:8px; align-items:flex-end;">
+      <div class="field" style="flex:3; min-width:160px;">
+        <label>Task or fixed appointment</label>
+        <input type="text" id="taskInput" placeholder="e.g. Finish proposal · or 'Dentist 14:00-15:00'">
+      </div>
+      <div class="field" style="flex:1; max-width:130px;">
+        <label>Priority</label>
+        <select id="taskPrio">
+          <option value="high">High</option>
+          <option value="med" selected>Medium</option>
+          <option value="low">Low</option>
+          <option value="fixed">Fixed time</option>
+        </select>
+      </div>
+      <button class="btn-ghost" id="addTask" style="height:39px;">Add</button>
+    </div>
+    <div class="hint2">Tip: for a fixed appointment, pick <b>Fixed time</b> and include the time in the text, e.g. "Team call 11:00-11:30". It'll be locked into that slot.</div>
+    <ul class="tasklist" id="taskList"></ul>
+    <div class="muted" id="emptyHint" style="margin-top:10px;">Add a few tasks, then build your plan.</div>
+
+    <div class="row" style="margin-top:14px;">
+      <button class="btn-primary" id="generate">✨ Build my day</button>
+      <button class="btn-ghost" id="clearAll">Clear tasks</button>
+    </div>
+    <div class="err" id="errBox" style="display:none;"></div>
+  </div>
+
+  <div id="planArea"></div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "dailyPlanner.v2";
+  var cur = new Date();
+
+  function ymd(d){ var y=d.getFullYear(), m=("0"+(d.getMonth()+1)).slice(-2), day=("0"+d.getDate()).slice(-2); return y+"-"+m+"-"+day; }
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } }
+  function save(all){ try { localStorage.setItem(KEY, JSON.stringify(all)); } catch(e){} }
+  var ALL = load();          // in-memory source of truth (works even if localStorage is blocked)
+  function dayKey(){ return ymd(cur); }
+  function blankDay(){ return { start:"09:00", end:"18:00", energy:"morning", tasks:[], plan:null }; }
+  function getDay(){ var k=dayKey(); if(!ALL[k]) ALL[k]=blankDay(); return ALL[k]; }
+  function setDay(day){ ALL[dayKey()]=day; save(ALL); }
+  var el = function(id){ return document.getElementById(id); };
+
+  function fmtDate(d){ return d.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric", year:"numeric" }); }
+  function renderHeader(){ var isToday = ymd(cur)===ymd(new Date()); el("dateLine").textContent = (isToday?"Today · ":"") + fmtDate(cur); }
+  function renderSetup(){ var day=getDay(); el("startTime").value=day.start; el("endTime").value=day.end; el("energy").value=day.energy; }
+
+  function prioClass(p){ return p==="high"?"p-high":p==="low"?"p-low":p==="fixed"?"p-fixed":"p-med"; }
+  function prioLabel(p){ return p==="high"?"High":p==="low"?"Low":p==="fixed"?"Fixed":"Med"; }
+
+  function renderTasks(){
+    var day=getDay(), list=el("taskList"); list.innerHTML="";
+    el("emptyHint").style.display = day.tasks.length ? "none":"block";
+    day.tasks.forEach(function(t,i){
+      var li=document.createElement("li"); li.className="taskitem";
+      li.innerHTML='<span class="t-prio '+prioClass(t.prio)+'">'+prioLabel(t.prio)+'</span><span class="t-text"></span><span class="x" data-i="'+i+'">×</span>';
+      li.querySelector(".t-text").textContent=t.text;
+      list.appendChild(li);
+    });
+    list.querySelectorAll(".x").forEach(function(x){
+      x.onclick=function(){ var d=getDay(); d.tasks.splice(parseInt(x.getAttribute("data-i")),1); setDay(d); renderTasks(); };
+    });
+  }
+
+  function addTask(){
+    var inp=el("taskInput"), text=inp.value.trim(); if(!text) return;
+    var day=getDay(); day.tasks.push({ text:text, prio: el("taskPrio").value }); setDay(day);
+    inp.value=""; renderTasks(); inp.focus();
+  }
+  function syncSetup(){ var day=getDay(); day.start=el("startTime").value||"09:00"; day.end=el("endTime").value||"18:00"; day.energy=el("energy").value; setDay(day); }
+
+  // ---------- time helpers ----------
+  function toMin(hhmm){ var p=hhmm.split(":"); return (+p[0])*60+(+p[1]); }
+  function minToHHMM(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60), mm=m%60; return ("0"+h).slice(-2)+":"+("0"+mm).slice(-2); }
+  function fmt12(m){ m=((m%1440)+1440)%1440; var h=Math.floor(m/60), mm=m%60, ap=h<12?"AM":"PM", h12=h%12; if(h12===0)h12=12; return h12+":"+("0"+mm).slice(-2)+" "+ap; }
+  function rangeLabel(s,e){ return fmt12(s)+"–"+fmt12(e); }
+
+  // parse a time or range out of free text e.g. "Dentist 14:00-15:00" or "call 9am"
+  function parseTimeFromText(txt){
+    var m = txt.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*[-–to]+\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if(m){
+      var s=hm(m[1],m[2],m[3]), e=hm(m[4],m[5],m[6]); if(s!=null&&e!=null) return {start:s,end:e};
+    }
+    var one = txt.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i) || txt.match(/\b(\d{1,2}):(\d{2})\b/);
+    if(one){ var st=hm(one[1],one[2],one[3]); if(st!=null) return {start:st,end:st+60}; }
+    return null;
+  }
+  function hm(h,mm,ap){ h=+h; if(isNaN(h))return null; mm=mm?+mm:0; if(ap){ ap=ap.toLowerCase(); if(ap==="pm"&&h<12)h+=12; if(ap==="am"&&h===12)h=0; } return h*60+mm; }
+
+  function parseRangeFromLabel(str){
+    if(!str) return null;
+    var clean=str.replace(/–|—/g,"-");
+    var m=clean.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*-\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if(!m) return null;
+    var s=hm(m[1],m[2],m[3]), e=hm(m[4],m[5],m[6]);
+    if(s==null||e==null) return null; if(e<=s)e+=720; return {start:s,end:e};
+  }
+
+  // ---------- built-in (offline) planner ----------
+  function defaultSteps(t){
+    var base=[
+      {text:"Clarify what 'done' looks like", done:false},
+      {text:"Line up what you need (files, info, tools)", done:false},
+      {text:"Do the focused core work", done:false},
+      {text:"Review, then mark it complete", done:false}
+    ];
+    if(t.prio==="low") return [ {text:"Knock it out in one pass", done:false}, {text:"Confirm it's fully done", done:false} ];
+    return base;
+  }
+  function durFor(p){ return p==="high"?90 : p==="low"?30 : 60; }
+
+  function localPlan(day){
+    var start=toMin(day.start), end=toMin(day.end);
+    if(end<=start) end=start+480;
+    var fixed=[], flex=[];
+    day.tasks.forEach(function(t){
+      if(t.prio==="fixed"){
+        var r=parseTimeFromText(t.text);
+        if(r){ fixed.push({start:r.start,end:r.end,title:t.text,kind:"fixed"}); return; }
+      }
+      flex.push(t);
+    });
+    var order={high:0,med:1,low:2};
+    flex.sort(function(a,b){ return (order[a.prio]||1)-(order[b.prio]||1); });
+
+    // energy peak window
+    var peak;
+    if(day.energy==="morning") peak=[start, start+180];
+    else if(day.energy==="afternoon") peak=[13*60, 16*60];
+    else if(day.energy==="evening") peak=[16*60, 20*60];
+    else peak=[start,end];
+
+    var lunch=null;
+    if(start<=13*60 && end>=13*60){ lunch={start:12*60+30,end:13*60+15}; }
+
+    fixed.sort(function(a,b){return a.start-b.start;});
+    function overlapsFixed(s,e){ return fixed.some(function(f){ return s<f.end && e>f.start; }) || (lunch && s<lunch.end && e>lunch.start); }
+
+    var blocks=[], cursor=start, idx=0;
+    function nextFree(from,len){
+      var s=from;
+      while(s+len<=end){
+        if(!overlapsFixed(s,s+len)) return s;
+        // jump past the blocking item
+        var jump=s+15;
+        fixed.forEach(function(f){ if(s<f.end && s+len>f.start) jump=Math.max(jump,f.end); });
+        if(lunch && s<lunch.end && s+len>lunch.start) jump=Math.max(jump,lunch.end);
+        s=jump;
+      }
+      return null;
+    }
+    // schedule high-priority first inside peak window when possible
+    function place(t){
+      var len=durFor(t.prio);
+      var from = (t.prio==="high") ? Math.max(cursor,peak[0]) : cursor;
+      var s=nextFree(from,len);
+      if(s==null) s=nextFree(start,len);
+      if(s==null) return false;
+      blocks.push({start:s,end:s+len,title:t.text,kind:"work",prio:t.prio,steps:defaultSteps(t)});
+      cursor=Math.max(cursor,s+len);
+      // short break after deep work
+      if((t.prio==="high"||t.prio==="med")){
+        var bs=nextFree(cursor,10);
+        if(bs!=null && bs<end-10){ blocks.push({start:bs,end:bs+10,title:"Break — stretch, water, reset",kind:"break"}); cursor=bs+10; }
+      }
+      return true;
+    }
+    flex.forEach(place);
+    // add fixed + lunch
+    fixed.forEach(function(f){ blocks.push({start:f.start,end:f.end,title:f.title,kind:"fixed",steps:[{text:"Be ready 5 min early",done:false}]}); });
+    if(lunch) blocks.push({start:lunch.start,end:lunch.end,title:"Lunch break",kind:"break"});
+    blocks.sort(function(a,b){return a.start-b.start;});
+
+    var planBlocks=blocks.map(function(b){
+      var o={ time:rangeLabel(b.start,b.end), start:minToHHMM(b.start), end:minToHHMM(b.end), title:b.title, kind:b.kind };
+      if(b.kind==="work"){ o.focus=prioLabel(b.prio)+" priority"; o.steps=b.steps; o.tip = b.prio==="high" ? "Protect this slot — silence notifications and do only this." : "Single-task it; momentum beats multitasking."; }
+      if(b.kind==="fixed") o.steps=b.steps;
+      return o;
+    });
+    return {
+      summary: "Planned "+flex.length+" task"+(flex.length===1?"":"s")+" around your "+day.energy+" peak"+(fixed.length?(", with "+fixed.length+" fixed item"+(fixed.length===1?"":"s")):"")+". Hard work sits in your strongest hours, with breaks built in.",
+      blocks: planBlocks
+    };
+  }
+
+  // ---------- plan rendering ----------
+  function renderPlan(){
+    var day=getDay(), area=el("planArea"); area.innerHTML="";
+    if(!day.plan) return;
+    var card=document.createElement("div"); card.className="card";
+
+    if(day.plan.summary){ var s=document.createElement("div"); s.className="summary"; s.textContent=day.plan.summary; card.appendChild(s); }
+
+    (day.plan.blocks||[]).forEach(function(b,bi){
+      var allDone=(b.steps||[]).length && b.steps.every(function(st){return st.done;});
+      var div=document.createElement("div");
+      div.className="block"+(allDone?" done":"")+(b.kind==="break"?" break":"")+(b.kind==="fixed"?" fixed":"");
+      var head='<div class="block-head"><span class="block-time">'+(b.time||"")+'</span><span class="block-title"></span></div>';
+      if(b.focus) head+='<div class="block-focus">'+escapeHtml(b.focus)+'</div>';
+      div.innerHTML=head;
+      div.querySelector(".block-title").textContent=b.title||"Block";
+      if((b.steps||[]).length){
+        var ul=document.createElement("ul"); ul.className="steps";
+        b.steps.forEach(function(st,si){
+          var liEl=document.createElement("li"); liEl.className="step"+(st.done?" checked":"");
+          var cb=document.createElement("input"); cb.type="checkbox"; cb.checked=!!st.done;
+          cb.onchange=function(){ var d=getDay(); d.plan.blocks[bi].steps[si].done=cb.checked; setDay(d); renderPlan(); };
+          var sp=document.createElement("span"); sp.textContent=st.text;
+          liEl.appendChild(cb); liEl.appendChild(sp); ul.appendChild(liEl);
+        });
+        div.appendChild(ul);
+      }
+      if(b.tip){ var tip=document.createElement("div"); tip.className="tip"; tip.innerHTML="<b>Tip:</b> "+escapeHtml(b.tip); div.appendChild(tip); }
+      // per-event Google Calendar link
+      var gl=gcalLink(b);
+      if(gl){ var a=document.createElement("a"); a.className="gcal"; a.href=gl; a.target="_blank"; a.rel="noopener"; a.textContent="+ Add this block to Google Calendar"; div.appendChild(document.createElement("br")); div.appendChild(a); }
+      card.appendChild(div);
+    });
+
+    // calendar export
+    var cal=document.createElement("div"); cal.style.marginTop="16px";
+    cal.innerHTML='<div class="section-title" style="margin-bottom:6px;">📅 Send to your phone calendar</div>'+
+      '<div class="cal-actions">'+
+        '<button class="btn-cal" id="dlIcs">Download to Calendar (.ics)</button>'+
+        '<button class="btn-ghost" id="shareBtn">Share / Save this planner</button>'+
+      '</div>'+
+      '<div class="hint2">On iPhone or Android, open the downloaded <b>.ics</b> file and tap "Add All" — every block lands in your calendar at the right time. Or use the green link under any block for Google Calendar.</div>';
+    card.appendChild(cal);
+
+    // progress
+    var pw=document.createElement("div"); pw.className="progress-wrap";
+    pw.innerHTML='<div class="section-title" style="margin:14px 0 6px;">Progress <span id="pctLabel"></span></div><div class="bar"><div id="barFill"></div></div>';
+    card.appendChild(pw);
+
+    area.appendChild(card);
+    el("dlIcs").onclick=downloadIcs;
+    el("shareBtn").onclick=shareApp;
+    renderProgress();
+  }
+
+  function renderProgress(){
+    var day=getDay(); if(!day.plan) return;
+    var total=0,done=0;
+    (day.plan.blocks||[]).forEach(function(b){ (b.steps||[]).forEach(function(st){ total++; if(st.done)done++; }); });
+    var pct=total?Math.round(done/total*100):0;
+    var fill=el("barFill"), lbl=el("pctLabel");
+    if(fill) fill.style.width=pct+"%";
+    if(lbl) lbl.textContent="· "+done+"/"+total+" done ("+pct+"%)";
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];}); }
+
+  // ---------- calendar export ----------
+  function blockTimes(b){
+    var r = (b.start && b.end) ? {start:toMin(b.start), end:toMin(b.end)} : parseRangeFromLabel(b.time);
+    return r;
+  }
+  function dtStamp(dateObj, min){
+    var d=new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    var h=Math.floor((min%1440)/60), mm=min%60;
+    function p(n){return("0"+n).slice(-2);}
+    return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"T"+p(h)+p(mm)+"00";
+  }
+  function gcalLink(b){
+    var r=blockTimes(b); if(!r) return null;
+    var s=dtStamp(cur,r.start), e=dtStamp(cur,r.end);
+    var details=(b.steps||[]).map(function(st){return "• "+st.text;}).join("\n");
+    if(b.tip) details+=(details?"\n\n":"")+"Tip: "+b.tip;
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE"+
+      "&text="+encodeURIComponent(b.title||"Plan block")+
+      "&dates="+s+"/"+e+
+      "&details="+encodeURIComponent(details||"");
+  }
+  function icsEscape(s){ return String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
+  function downloadIcs(){
+    var day=getDay(); if(!day.plan) return;
+    var lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Daily Planner//EN","CALSCALE:GREGORIAN"];
+    var stamp=new Date(), p=function(n){return("0"+n).slice(-2);};
+    var dtNow=stamp.getUTCFullYear()+p(stamp.getUTCMonth()+1)+p(stamp.getUTCDate())+"T"+p(stamp.getUTCHours())+p(stamp.getUTCMinutes())+p(stamp.getUTCSeconds())+"Z";
+    (day.plan.blocks||[]).forEach(function(b,i){
+      var r=blockTimes(b); if(!r) return;
+      var desc=(b.steps||[]).map(function(st){return "• "+st.text;}).join("\\n");
+      if(b.tip) desc+=(desc?"\\n\\n":"")+"Tip: "+icsEscape(b.tip);
+      lines.push("BEGIN:VEVENT");
+      lines.push("UID:"+dayKey()+"-"+i+"-"+Math.random().toString(36).slice(2)+"@daily-planner");
+      lines.push("DTSTAMP:"+dtNow);
+      lines.push("DTSTART:"+dtStamp(cur,r.start));
+      lines.push("DTEND:"+dtStamp(cur,r.end));
+      lines.push("SUMMARY:"+icsEscape(b.title||"Plan block"));
+      if(desc) lines.push("DESCRIPTION:"+desc);
+      lines.push("END:VEVENT");
+    });
+    lines.push("END:VCALENDAR");
+    var blob=new Blob([lines.join("\r\n")],{type:"text/calendar"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a"); a.href=url; a.download="my-plan-"+dayKey()+".ics"; document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); },500);
+  }
+
+  // ---------- share ----------
+  async function shareApp(){
+    var url=location.href;
+    try{
+      if(navigator.share){ await navigator.share({title:"Daily Planner", text:"My daily planner", url:url}); return; }
+    }catch(e){}
+    try{
+      await navigator.clipboard.writeText(url);
+      alert("Link copied!\n\nOpen this same file on your phone (AirDrop/email it to yourself) to use it there. Your plans are saved on each device.");
+    }catch(e){
+      alert("To share: send this HTML file to anyone, or open it on your phone's browser. It works fully offline.");
+    }
+  }
+
+  // ---------- generate ----------
+  function buildPrompt(day){
+    var tasks=day.tasks.map(function(t){return "- ["+t.prio.toUpperCase()+"] "+t.text;}).join("\n");
+    return [
+      "You are an expert productivity coach. Build a realistic, time-blocked daily plan.",
+      "Day window: "+day.start+" to "+day.end+". Energy peak: "+day.energy+".",
+      "Items marked FIXED have a set time stated in their text — keep them exactly there.",
+      "Schedule the hardest / highest-priority work during the energy peak. Add short breaks, lunch, and buffer. Don't overpack.",
+      "Break each task into concrete, checkable action steps (start with a verb).",
+      "",
+      "Today's tasks:", tasks, "",
+      "Respond with ONLY valid JSON (no markdown/code fences) in exactly this shape:",
+      '{ "summary":"1-2 sentence overview",',
+      '  "blocks":[ {"time":"9:00 AM–10:30 AM","start":"09:00","end":"10:30","title":"name","focus":"which task","kind":"work","steps":[{"text":"step","done":false}],"tip":"one tip"} ] }',
+      'Use "start"/"end" in 24h HH:MM so it can sync to a calendar. kind is "work", "break", or "fixed". Order blocks chronologically.'
+    ].join("\n");
+  }
+  function extractJson(text){
+    if(text && typeof text==="object" && text.blocks) return text;
+    var t=String(text).trim().replace(/^```json\s*/i,"").replace(/^```\s*/i,"").replace(/```\s*$/,"");
+    var a=t.indexOf("{"), b=t.lastIndexOf("}"); if(a>=0&&b>a) t=t.slice(a,b+1);
+    return JSON.parse(t);
+  }
+  function setBusy(on){ var btn=el("generate"); btn.disabled=on; btn.innerHTML=on?'<span class="spinner"></span>Building your day…':'✨ Build my day'; }
+  function showErr(msg){ var e=el("errBox"); if(!msg){e.style.display="none";return;} e.style.display="block"; e.textContent=msg; }
+
+  async function generate(){
+    syncSetup(); var day=getDay(); showErr("");
+    if(!day.tasks.length){ showErr("Add at least one task first."); return; }
+    setBusy(true);
+    try{
+      var plan=null;
+      if(window.cowork && window.cowork.askClaude){
+        try{
+          var ask=window.cowork.askClaude(buildPrompt(day),[]);
+          var timeout=new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("timeout")); }, 25000); });
+          var res=await Promise.race([ask, timeout]);
+          var text=(res&&(res.text||res.content||res.result||res.output))||res;
+          plan=extractJson(text);
+          (plan.blocks||[]).forEach(function(b){ b.steps=(b.steps||[]).map(function(st){return typeof st==="string"?{text:st,done:false}:{text:st.text||"",done:!!st.done};}); });
+        }catch(e){ plan=null; }
+      }
+      if(!plan || !plan.blocks || !plan.blocks.length){ plan=localPlan(day); }  // offline fallback
+      day.plan=plan; setDay(day); renderPlan();
+    }catch(err){
+      try{ var d=getDay(); d.plan=localPlan(d); setDay(d); renderPlan(); }
+      catch(e2){ showErr("Couldn't build the plan. Try again."); }
+    }finally{ setBusy(false); }
+  }
+
+  function refreshAll(){ renderHeader(); renderSetup(); renderTasks(); renderPlan(); showErr(""); }
+
+  el("addTask").onclick=addTask;
+  el("taskInput").addEventListener("keydown",function(e){ if(e.key==="Enter") addTask(); });
+  el("generate").onclick=generate;
+  el("clearAll").onclick=function(){ var d=getDay(); d.tasks=[]; d.plan=null; setDay(d); refreshAll(); };
+  ["startTime","endTime","energy"].forEach(function(id){ el(id).addEventListener("change",syncSetup); });
+  el("prevDay").onclick=function(){ cur.setDate(cur.getDate()-1); refreshAll(); };
+  el("nextDay").onclick=function(){ cur.setDate(cur.getDate()+1); refreshAll(); };
+  el("today").onclick=function(){ cur=new Date(); refreshAll(); };
+
+  refreshAll();
+})();
+</script>
+</body>
+</html>
